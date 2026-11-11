@@ -1,0 +1,50 @@
+services:
+  database:
+    image: mongo:7.0
+    container_name: notes_db
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: notes_app
+    volumes:
+      - mongo_data:/data/db
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: notes_backend
+    restart: unless-stopped
+    ports:
+      - "5050:5050"
+    environment:
+      PORT: 5050
+      MONGODB_URI: mongodb://database:27017/notes_app
+      JWT_SECRET: supersecret_interview_jwt_key_2024
+      JWT_EXPIRES_IN: 24h
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      - database
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: notes_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:5050/api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+volumes:
+  mongo_data:
