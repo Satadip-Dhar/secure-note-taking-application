@@ -52,56 +52,6 @@ secure-note-taking-application/
 
 ---
 
-## Database Indexing Strategy
-
-In accordance with strict indexing efficiency requirements, only indexes that directly back query filters, sorting, and aggregations are created using `schema.index()`:
-
-### Defined Indexes
-
-1. **`User` Collection**:
-   - `userSchema.index({ email: 1 }, { unique: true })`
-     - **Purpose:** Fast $O(1)$ equality lookup on user login (`findOne({ email })`) and database-enforced email uniqueness.
-   - `userSchema.index({ interests: 1 })`
-     - **Purpose:** Multikey index backing the initial `$match` stage of the "Group by Interests" aggregation pipeline (`$unwind` + `$group`).
-
-2. **`Note` Collection**:
-   - `noteSchema.index({ userId: 1, createdAt: -1 })`
-     - **Purpose:** Compound index backing user notes listing (`Note.find({ userId }).sort({ createdAt: -1 })`). Conforms to the ESR (Equality, Sort, Range) rule by putting the equality filter first and sort order second in a single index scan.
-
-3. **`Post` Collection**:
-   - `postSchema.index({ userId: 1, createdAt: -1 })`
-     - **Purpose:** Backs `$lookup` joins where `foreignField` is `userId`, as well as sorted retrieval of posts by author.
-
-### Intentionally Omitted Indexes
-
-- **No explicit `_id` indexes:** MongoDB automatically creates unique indexes on `_id`. Single-item GET endpoints (`/api/notes/:id`, `/api/users/:id`, `/api/posts/:id`) leverage this native index without extra memory overhead.
-- **No index on `role`:** Authorization is verified statelessly from the signed JWT payload rather than querying the database per request.
-- **Unfiltered list sorting:** Admin user listing (`/api/users`) and public post listing (`/api/posts`) sort on `{ _id: -1 }` (which embeds creation timestamp and uses the free default index).
-
----
-
-## Aggregation Pipelines
-
-### Scenario 1: Group Users by Interests
-- **Endpoint:** `GET /api/aggregations/users-by-interests`
-- **Method:** Exactly one `User.aggregate()` call.
-- **Pipeline:**
-  1. `$match`: Filters documents having non-empty `interests` (uses multikey index).
-  2. `$unwind`: Deconstructs the `interests` array.
-  3. `$group`: Groups by interest name, computes count, and collects user references.
-  4. `$sort`: Orders by group popularity descending.
-  5. `$project`: Formats output fields cleanly.
-
-### Scenario 2: User Posts ($lookup)
-- **Endpoint:** `GET /api/aggregations/users/:userId/posts`
-- **Method:** Single aggregation pipeline on `User` with `$lookup`.
-- **Pipeline:**
-  1. `$match`: Selects target user by `_id`.
-  2. `$lookup`: Joins `posts` collection on `userId`, sorted by `createdAt: -1`.
-  3. `$project`: Includes user details, joined post array, and total post count.
-
----
-
 ## Getting Started
 
 ### Prerequisites
