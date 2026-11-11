@@ -4,6 +4,14 @@ A secure, role-based REST API and frontend platform featuring JWT authentication
 
 ---
 
+## Live Deployments
+
+- **Live Frontend (Vercel):** [https://secure-note-taking-application-indol.vercel.app](https://secure-note-taking-application-indol.vercel.app/)
+- **Live Backend API (Render):** [https://secure-notes-api-gs3h.onrender.com/api](https://secure-notes-api-gs3h.onrender.com/api)
+- **API Health Check:** [https://secure-notes-api-gs3h.onrender.com/api/health](https://secure-notes-api-gs3h.onrender.com/api/health)
+
+---
+
 ## Architecture Overview
 
 The system is organized into three decoupled services:
@@ -128,7 +136,7 @@ Ensure MongoDB is running locally on port 27017.
 cd backend
 npm install
 npm run seed       # Seeds sample admin and users
-npm run dev        # Starts server on port 5000
+npm run dev        # Starts server on port 5050
 ```
 
 **Start Frontend:**
